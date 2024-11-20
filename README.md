@@ -16,9 +16,9 @@ Before installing the framework, you should make yourself familiar with ROS and 
    ```sh
    docker run hello-world
    ```
-4. Clone the git repository. #TODO, NEED REPO
+4. Clone the git repository.
    ```sh
-   git clone --recursive [...]
+   git clone --recursive git@github.com:renezurbruegg/DockerTemplate.git
    ```
 5. Navigate to the Ubuntu setup folder
 
