@@ -1,29 +1,33 @@
 # syntax=docker/dockerfile:experimental
-FROM osrf/ros:noetic-desktop-full
+# Use ubuntu 20.04 as base image
+FROM ubuntu:20.04
 
-ARG MAKE_JOBS=6
-
-
-ENV CTEST_PARALLEL_LEVEL=$MAKE_JOBS CTEST_OUTPUT_ON_FAILURE=true DEBIAN_FRONTEND=noninteractive \
-    CMAKE_OPTS="-DBUILD_PYTHON_INTERFACE=OFF \
-                -DCMAKE_INSTALL_LIBDIR=lib \
-                -DCMAKE_INSTALL_PREFIX=/usr \
-                -DBUILD_TESTING=ON \
-                -DCMAKE_BUILD_TYPE=Release"
-
-
-
-
+# Define the folder /code as the main working directory
 WORKDIR /code
 
-# PYTHON DEPENDENCIES
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    python3-venv \
+# ===============================
+# Install Python3.10 
+# ===============================
+# Install python3.10. Since ubuntu 20.04 only has python3.8 by default, we need to add some addtional ppa's to install python3.10
+RUN apt-get update && apt install -y software-properties-common
+# Add deadsnakes ppa which contains python3.10 for ubuntu 20.04
+RUN add-apt-repository -y ppa:deadsnakes/ppa
+# Install python3.10
+RUN apt update && apt install -y python3.10 python3.10-distutils python3.10-dev
+# Make sure python and python3 point to python3.10, and not the system default python3.8
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+
+# ===============================
+# Install common dependencies
+# ===============================
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl \
+    wget \
+    ccache \
     assimp-utils \
     build-essential \
     cmake \
-    curl \
     git \
     libassimp-dev \
     libboost-all-dev \
@@ -35,48 +39,44 @@ RUN apt-get update && apt-get install -y \
     libsasl2-dev \
     libgmp3-dev \
     libsnmp-dev \
-    ros-noetic-plotjuggler\
-    python3-tk\
-    python3-rosdep\
-    ros-noetic-realsense2-camera\
-    ros-noetic-graph-msgs \
-    apt-transport-https\
-    ccache\
-    && rm -rf /var/lib/apt/lists/*
+    libgl1-mesa-dev \
+    libgl1-mesa-glx \
+    libglew-dev \
+    libosmesa6-dev \
+    software-properties-common \
+    net-tools \
+    virtualenv \
+    wget \
+    xpra \
+    patchelf \
+    xserver-xorg-dev \
+    apt-transport-https \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ===============================
+# Install Python dependencies
+# Specified in the requirements.txt file
+# ===============================
+# Install pip
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python get-pip.py
 
-# INSTALL librealsense
+# This is needed to make mujoco_py work. Somehow Cython 3.0 breaks it. So downgrade it
+RUN pip install "Cython<3"
+RUN pip install numpy --force-reinstall
 
-RUN mkdir -p /etc/apt/keyrings
-RUN curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | tee /etc/apt/keyrings/librealsense.pgp > /dev/null
-
-RUN echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | tee /etc/apt/sources.list.d/librealsense.list
-
-RUN apt-get update && apt-get install -y \
-    librealsense2-dkms \
-    librealsense2-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-
-RUN python3 -m pip install --upgrade pip
-
+# Copy the requirements.txt file to the container
 COPY requirements.txt .
+# Install the dependencies
 RUN python3 -m pip install -r requirements.txt
 
-# CACHING FOR PIP
-# Note: This makes re-building of images a LOT quicker since we do not need to
-# download all pip packages again and again.
-ENV PIP_CACHE_DIR=/root/.cache/pip
-RUN mkdir -p $PIP_CACHE_DIR
+# ===============================
+# Install Mujoco v210
+# ===============================
+RUN wget https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz
+RUN mkdir /root/.mujoco
+RUN tar -xf mujoco210-linux-x86_64.tar.gz --directory /root/.mujoco
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mujoco210/bin
 
-RUN rosdep update
-RUN \
-    # Update apt package list as previous containers clear the cache
-    apt-get -q update && \
-    apt-get -q -y dist-upgrade
-
-RUN apt-get install -y \
-    python3-wstool\
-    python3-catkin-tools\
-    ros-noetic-rosparam-shortcuts \
-    && rm -rf /var/lib/apt/lists/*
+# Trigger mujoco_py compilation
+RUN python -c "import mujoco_py"

@@ -19,12 +19,13 @@ Before installing the framework, you should make yourself familiar with ROS and 
 4. Clone the git repository.
    ```sh
    git clone --recursive git@github.com:renezurbruegg/DockerTemplate.git
+   cd DockerTemplate
    ```
 5. Navigate to the Ubuntu setup folder
 
    ```sh
-   cd mydocker/.setup/ubuntu # for Ubuntu
-   cd mydocker/.setup/macos # for Mac
+   cd .setup/ubuntu # for Ubuntu
+   cd .setup/macos # for Mac
    ```
 6. Execute the setup script
 

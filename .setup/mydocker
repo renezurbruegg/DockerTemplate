@@ -47,12 +47,11 @@ function run() {
 
 function clean() {
     docker system prune
-    docker image rm "registry.ethz.ch/ics-group/projects/andrea/mydocker"
+    docker image rm "mydocker"
 }
 
 function attach() {
     # Finding the correct container relies on the fact that above,
-    # the image is tagged with the name registry.ethz.ch/[...]/mydocker
     n_running=$(docker ps | grep 'mydocker' | wc -l | xargs)
     if [ "${n_running}" -eq 0 ]; then
         printf "There are no mydocker container running.\n\n"
