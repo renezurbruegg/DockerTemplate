@@ -60,6 +60,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # Install pip
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python get-pip.py
+RUN rm get-pip.py
 
 # This is needed to make mujoco_py work. Somehow Cython 3.0 breaks it. So downgrade it
 RUN pip install "Cython<3"
@@ -77,6 +78,8 @@ RUN wget https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz
 RUN mkdir /root/.mujoco
 RUN tar -xf mujoco210-linux-x86_64.tar.gz --directory /root/.mujoco
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mujoco210/bin
+# cleanup
+RUN rm mujoco210-linux-x86_64.tar.gz
 
 # Trigger mujoco_py compilation
 RUN python -c "import mujoco_py"
