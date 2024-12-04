@@ -70,16 +70,3 @@ RUN pip install numpy --force-reinstall
 COPY requirements.txt .
 # Install the dependencies
 RUN python3 -m pip install -r requirements.txt
-
-# ===============================
-# Install Mujoco v210
-# ===============================
-RUN wget https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz
-RUN mkdir /root/.mujoco
-RUN tar -xf mujoco210-linux-x86_64.tar.gz --directory /root/.mujoco
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mujoco210/bin
-# cleanup
-RUN rm mujoco210-linux-x86_64.tar.gz
-
-# Trigger mujoco_py compilation
-RUN python -c "import mujoco_py"

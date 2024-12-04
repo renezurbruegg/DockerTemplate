@@ -1,2 +1,2 @@
 opencv-python
-mujoco-py<2.2,>=2.1
+mujoco==3.2.0
