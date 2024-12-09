@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:experimental
 # Use ubuntu 20.04 as base image
-FROM ubuntu:20.04
+FROM --platform=linux/arm64  ubuntu:20.04
+# FROM ubuntu:20.04
 
 # Define the folder /code as the main working directory
 WORKDIR /code
@@ -51,6 +52,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     patchelf \
     xserver-xorg-dev \
     apt-transport-https \
+    liblapack-dev \
+    libopenblas-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ===============================
@@ -70,3 +73,12 @@ RUN pip install numpy --force-reinstall
 COPY requirements.txt .
 # Install the dependencies
 RUN python3 -m pip install -r requirements.txt
+
+
+RUN mkdir /acados
+# CASADI INSTALLATION
+RUN git clone  https://github.com/acados/acados.git /acados
+RUN cd /acados && git submodule update --init --recursive
+RUN cd /acados && mkdir -p build && cd build
+RUN cd /acados/build &&  cmake .. -DACADOS_WITH_QPOASES=ON -DACADOS_SILENT=ON -DCMAKE_OSX_ARCHITECTURES=arm64 -DBLASFEO_TARGET=GENERIC -DHPIPM_TARGET=GENERIC  -DCMAKE_BUILD_TYPE=Release -DUNIT_TESTS=OFF -DSWIG_MATLAB=0 -DSWIG_PYTHON=1
+RUN cd /acados/build &&  make -j 1 && make install
